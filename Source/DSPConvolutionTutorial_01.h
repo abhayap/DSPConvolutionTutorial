@@ -184,26 +184,49 @@ class Distortion
 {
 public:
     //==============================================================================
-    Distortion() {}
+    Distortion()
+    {
+        auto& waveshaper = processorChain.template get<waveshaperIndex>();
+        waveshaper.functionToUse = [] (Type x)
+                                   {
+                                       return std::tanh (x);
+                                   };
+        
+        auto& preGain = processorChain.template get<preGainIndex>();
+        preGain.setGainDecibels (30.0f);
+        
+        auto& postGain = processorChain.template get<postGainIndex>();
+        postGain.setGainDecibels (-20.0f);
+    }
 
     //==============================================================================
     void prepare (const juce::dsp::ProcessSpec& spec)
     {
-        juce::ignoreUnused (spec);
+        processorChain.prepare (spec);
     }
 
     //==============================================================================
     template <typename ProcessContext>
     void process (const ProcessContext& context) noexcept
     {
-        juce::ignoreUnused (context);
+        processorChain.process (context);
     }
 
     //==============================================================================
-    void reset() noexcept {}
+    void reset() noexcept
+    {
+        processorChain.reset();
+    }
 
 private:
     //==============================================================================
+    enum
+    {
+        preGainIndex,
+        waveshaperIndex,
+        postGainIndex
+    };
+    juce::dsp::ProcessorChain<juce::dsp::Gain<Type>, juce::dsp::WaveShaper<Type>, juce::dsp::Gain<Type>> processorChain;
 };
 
 //==============================================================================
